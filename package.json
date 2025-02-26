@@ -1,14 +1,14 @@
 {
   "name": "productboard-mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Integrate the Productboard API into agentic workflows via MCP",
   "author": "Kenji Hikmatullah",
   "license": "MIT",
   "publisher": "kenjihikmatullah",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/kenjihikmatullah/productboard-mcp"
-	},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kenjihikmatullah/productboard-mcp"
+  },
   "type": "module",
   "bin": {
     "notion": "./build/index.js"
@@ -23,11 +23,11 @@
     "inspector": "npx @modelcontextprotocol/inspector build/index.js"
   },
   "keywords": [
-		"mcp",
-		"agent",
-		"autonomous",
-		"ai"
-	],
+    "mcp",
+    "agent",
+    "autonomous",
+    "ai"
+  ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0"
   },
