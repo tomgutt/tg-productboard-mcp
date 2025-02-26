@@ -1,0 +1,21 @@
+{
+  "name": "productboard-mcp",
+  "version": "1.0.0",
+  "description": "Integrate the Productboard API into agentic workflows via MCP",
+  "license": "MIT",
+  "author": "Kenji Hikmatullah",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "typescript": "^5.7.3"
+  }
+}
