@@ -12,6 +12,11 @@ import { getFeaturesTool, GetFeaturesRequest, getFeatures } from "./feature/get_
 import { getFeatureDetailTool, GetFeatureDetailRequest, getFeatureDetail } from "./feature/get_feature_detail.js";
 import { getComponentsTool, GetComponentsRequest, getComponents } from "./component/get_components.js";
 import { getComponentDetailTool, GetComponentDetailRequest, getComponentDetail } from "./component/get_component_detail.js";
+import { getFeatureStatusesTool, GetFeatureStatusesRequest, getFeatureStatuses } from "./feature_status/get_feature_statuses.js";
+import { getNotesTool, GetNotesRequest, getNotes } from "./note/get_notes.js";
+import { getNoteDetailTool, GetNoteDetailRequest, getNoteDetail } from "./note/get_note_detail.js";
+import { getCompaniesTool, GetCompaniesRequest, getCompanies } from "./company/get_companies.js";
+import { getCompanyDetailTool, GetCompanyDetailRequest, getCompanyDetail } from "./company/get_company_detail.js";
 
 async function main() {
     const productboardAccessToken = process.env.PRODUCTBOARD_ACCESS_TOKEN
@@ -90,6 +95,46 @@ async function main() {
                         }
                     }
 
+                    case getFeatureStatusesTool.name: {
+                        const request = args as unknown as GetFeatureStatusesRequest;
+                        const result = await getFeatureStatuses(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case getNotesTool.name: {
+                        const request = args as unknown as GetNotesRequest;
+                        const result = await getNotes(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case getNoteDetailTool.name: {
+                        const request = args as unknown as GetNoteDetailRequest;
+                        const result = await getNoteDetail(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case getCompaniesTool.name: {
+                        const request = args as unknown as GetCompaniesRequest;
+                        const result = await getCompanies(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case getCompanyDetailTool.name: {
+                        const request = args as unknown as GetCompanyDetailRequest;
+                        const result = await getCompanyDetail(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
                     default:
                         throw new Error(`Unknown tool: ${name}`);
                 }
@@ -119,7 +164,12 @@ async function main() {
                 getFeaturesTool,
                 getFeatureDetailTool,
                 getComponentsTool,
-                getComponentDetailTool
+                getComponentDetailTool,
+                getFeatureStatusesTool,
+                getNotesTool,
+                getNoteDetailTool,
+                getCompaniesTool,
+                getCompanyDetailTool
             ],
         };
     });
