@@ -7,6 +7,7 @@ import {
     ListToolsRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
 import { getProductsTool, GetProductsRequest, getProducts } from "./product/get_products.js";
+import { getProductDetailTool, GetProductDetailRequest, getProductDetail } from "./product/get_product_detail.js";
 
 async function main() {
     const productboardAccessToken = process.env.PRODUCTBOARD_ACCESS_TOKEN
@@ -45,6 +46,14 @@ async function main() {
                         }
                     }
 
+                    case getProductDetailTool.name: {
+                        const request = args as unknown as GetProductDetailRequest;
+                        const result = await getProductDetail(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
                     default:
                         throw new Error(`Unknown tool: ${name}`);
                 }
@@ -69,7 +78,8 @@ async function main() {
         console.info("Received ListToolsRequest");
         return {
             tools: [
-                getProductsTool
+                getProductsTool,
+                getProductDetailTool
             ],
         };
     });
