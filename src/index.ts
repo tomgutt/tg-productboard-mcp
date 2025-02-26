@@ -8,6 +8,10 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { getProductsTool, GetProductsRequest, getProducts } from "./product/get_products.js";
 import { getProductDetailTool, GetProductDetailRequest, getProductDetail } from "./product/get_product_detail.js";
+import { getFeaturesTool, GetFeaturesRequest, getFeatures } from "./feature/get_features.js";
+import { getFeatureDetailTool, GetFeatureDetailRequest, getFeatureDetail } from "./feature/get_feature_detail.js";
+import { getComponentsTool, GetComponentsRequest, getComponents } from "./component/get_components.js";
+import { getComponentDetailTool, GetComponentDetailRequest, getComponentDetail } from "./component/get_component_detail.js";
 
 async function main() {
     const productboardAccessToken = process.env.PRODUCTBOARD_ACCESS_TOKEN
@@ -54,6 +58,38 @@ async function main() {
                         }
                     }
 
+                    case getFeaturesTool.name: {
+                        const request = args as unknown as GetFeaturesRequest;
+                        const result = await getFeatures(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case getFeatureDetailTool.name: {
+                        const request = args as unknown as GetFeatureDetailRequest;
+                        const result = await getFeatureDetail(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case getComponentsTool.name: {
+                        const request = args as unknown as GetComponentsRequest;
+                        const result = await getComponents(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case getComponentDetailTool.name: {
+                        const request = args as unknown as GetComponentDetailRequest;
+                        const result = await getComponentDetail(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
                     default:
                         throw new Error(`Unknown tool: ${name}`);
                 }
@@ -79,7 +115,11 @@ async function main() {
         return {
             tools: [
                 getProductsTool,
-                getProductDetailTool
+                getProductDetailTool,
+                getFeaturesTool,
+                getFeatureDetailTool,
+                getComponentsTool,
+                getComponentDetailTool
             ],
         };
     });
