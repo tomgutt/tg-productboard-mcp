@@ -10,6 +10,12 @@
 		"url": "https://github.com/kenjihikmatullah/productboard-mcp"
 	},
   "type": "module",
+  "bin": {
+    "notion": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "prepare": "npm run build",
