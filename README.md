@@ -34,7 +34,7 @@ To use this with Claude Desktop, add the following to your `claude_desktop_confi
       "command": "npx",
       "args": [
         "-y",
-        "@kenjihikmatullah/productboard-mcp"
+        "productboard-mcp"
       ],
       "env": {
         "PRODUCTBOARD_ACCESS_TOKEN": "<YOUR_TOKEN>"
