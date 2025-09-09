@@ -10,6 +10,7 @@ import { getProductsTool, GetProductsRequest, getProducts } from "./product/get_
 import { getProductDetailTool, GetProductDetailRequest, getProductDetail } from "./product/get_product_detail.js";
 import { getFeaturesTool, GetFeaturesRequest, getFeatures } from "./feature/get_features.js";
 import { getFeatureDetailTool, GetFeatureDetailRequest, getFeatureDetail } from "./feature/get_feature_detail.js";
+import { searchFeaturesTool, SearchFeaturesRequest, searchFeatures } from "./feature/search_features.js";
 import { getComponentsTool, GetComponentsRequest, getComponents } from "./component/get_components.js";
 import { getComponentDetailTool, GetComponentDetailRequest, getComponentDetail } from "./component/get_component_detail.js";
 import { getFeatureStatusesTool, GetFeatureStatusesRequest, getFeatureStatuses } from "./feature_status/get_feature_statuses.js";
@@ -29,7 +30,7 @@ async function main() {
     const server = new Server(
         {
             name: "Productboard MCP Server",
-            version: "1.0.0",
+            version: "1.1.0",
         },
         {
             capabilities: {
@@ -74,6 +75,14 @@ async function main() {
                     case getFeatureDetailTool.name: {
                         const request = args as unknown as GetFeatureDetailRequest;
                         const result = await getFeatureDetail(request);
+                        return {
+                            content: [{ type: "text", text: JSON.stringify(result) }],
+                        }
+                    }
+
+                    case searchFeaturesTool.name: {
+                        const request = args as unknown as SearchFeaturesRequest;
+                        const result = await searchFeatures(request);
                         return {
                             content: [{ type: "text", text: JSON.stringify(result) }],
                         }
@@ -163,6 +172,7 @@ async function main() {
                 getProductDetailTool,
                 getFeaturesTool,
                 getFeatureDetailTool,
+                searchFeaturesTool,
                 getComponentsTool,
                 getComponentDetailTool,
                 getFeatureStatusesTool,
