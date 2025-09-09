@@ -10,11 +10,13 @@ Integrate the Productboard API into agentic workflows via MCP
 3. `get_components`
 4. `get_component_detail`
 5. `get_features`
-6. `get_feature_detail`
-7. `get_feature_statuses`
-8. `get_notes`
-9. `get_products`
-10. `get_product_detail`
+6. `search_features`
+7. `get_feature_detail`
+8. `get_feature_statuses`
+9. `get_notes`
+10. `get_note_detail`
+11. `get_products`
+12. `get_product_detail`
 
 
 ## Setup
