@@ -29,7 +29,8 @@
     "mcp",
     "agent",
     "autonomous",
-    "ai"
+    "ai",
+    "productboard"
   ],
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.0"
