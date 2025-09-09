@@ -31,7 +31,7 @@ const searchFeatures = async (request: SearchFeaturesRequest): Promise<any> => {
     
     // Collect all features from all pages
     const allFeatures: any[] = [];
-    let nextUrl: string | undefined = '/features';
+    let nextUrl: string | undefined = '/features?pageLimit=1000';
     
     // Fetch all pages
     while (nextUrl) {
@@ -41,8 +41,8 @@ const searchFeatures = async (request: SearchFeaturesRequest): Promise<any> => {
             allFeatures.push(...response.data);
         }
         
-        // Continue to next page only if there's a next URL AND current page has 100 items
-        if (response.links?.next && response.data.length === 100) {
+        // Continue to next page only if there's a next URL AND current page has 1000 items
+        if (response.links?.next && response.data.length === 1000) {
             nextUrl = new URL(response.links.next).pathname + new URL(response.links.next).search;
         } else {
             nextUrl = undefined;
