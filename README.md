@@ -36,7 +36,7 @@ To use this with Claude Desktop, add the following to your `claude_desktop_confi
       "command": "npx",
       "args": [
         "-y",
-        "productboard-mcp"
+        "@tomgutt/productboard-mcp"
       ],
       "env": {
         "PRODUCTBOARD_ACCESS_TOKEN": "<YOUR_TOKEN>"
@@ -45,6 +45,11 @@ To use this with Claude Desktop, add the following to your `claude_desktop_confi
   }
 }
 ```
+
+## Changes to original
+- Implements additional parameters for get_features
+- Implements additional search_features tool
+- Implements post-processing for response data to reduce token usage
 
 ## License
 
