@@ -205,7 +205,13 @@ const getNotes = async (request: GetNotesRequest): Promise<any> => {
     const endpoint = `/notes${queryString ? `?${queryString}` : ''}`
 
     const result = await productboardClient.get(endpoint)
-    return postProcessNoteData(result)
+
+    try {
+        return postProcessNoteData(result)
+    } catch (error) {
+        console.error('Error post-processing note data:', error)
+        return result
+    }
 }
 
 export { getNotesTool, GetNotesRequest, getNotes }
