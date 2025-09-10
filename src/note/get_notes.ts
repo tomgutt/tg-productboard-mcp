@@ -1,5 +1,6 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import productboardClient from "../productboard_client.js";
+import { removeNestedFieldsIfPresent, removeFields, removeEmptyFields, sanitizeHTMLContent } from "../utils/post_processor.js";
 
 const getNotesTool: Tool = {
     "name": "get_notes",
@@ -90,6 +91,62 @@ interface GetNotesRequest {
     pageCursor?: string;
 }
 
+
+function postProcessNoteData(result: { data: any[] | null }): { data: any[] | null } {
+    /**
+     * This will extract the data from the result and try to remove all fields specified in every data object.
+     * The data object in the result is replaced with the modified data object and the result is returned.
+     */
+    // Top-level fields to remove
+    const fieldsToRemove = [
+        "company", // We only have one company so this is not relevant
+        "followers", // The followers arent too interesting
+        "user", // This is not relevant as there is no tool to process a user id
+        "externalDisplayUrl" // This is not relevant as we are only interested in the internal note url
+    ];
+
+    // Nested fields to remove. To remove status under user (or ["user"]["status"]) it is ["user", "status"]
+    const nestedFieldsToRemove = [
+        ["source", "record_id"], // This is not relevant as there is no tool to process a record id
+        ["features", "type"], // This is not relevant as the feature type seems to always be "feature"
+        ["createdBy", "id"] // This is not relevant as there is no tool to process a user id
+    ];
+
+    if (result.data !== null) {
+        // For every bookmark object in the result
+        for (let i = 0; i < result.data.length; i++) {
+            const dataObject = result.data[i];
+            if (dataObject) { // Check if dataObject is not null/undefined/empty
+                // Remove nested fields if specified in every data object
+                let processedObject = removeNestedFieldsIfPresent(
+                    dataObject,
+                    nestedFieldsToRemove
+                );
+
+                // Remove all top-level fields specified in every data object
+                processedObject = removeFields(processedObject, fieldsToRemove);
+
+                // Remove empty fields (null values, empty arrays, objects with all null subfields)
+                processedObject = removeEmptyFields(processedObject);
+
+                // Sanitize token-heavy HTML/content fields
+                if (typeof processedObject.content === 'string') {
+                    processedObject.content = sanitizeHTMLContent(processedObject.content);
+                }
+
+                // Update the result with the processed object
+                result.data[i] = processedObject;
+            }
+        }
+    } else {
+        // When no data is returned, we return the result as is
+        return result;
+    }
+
+    return result;
+}
+
+
 const getNotes = async (request: GetNotesRequest): Promise<any> => {
     // Validate mutually exclusive parameters
     if (request.last && (request.createdFrom || request.createdTo)) {
@@ -147,7 +204,8 @@ const getNotes = async (request: GetNotesRequest): Promise<any> => {
     const queryString = params.toString()
     const endpoint = `/notes${queryString ? `?${queryString}` : ''}`
 
-    return productboardClient.get(endpoint)
+    const result = await productboardClient.get(endpoint)
+    return postProcessNoteData(result)
 }
 
 export { getNotesTool, GetNotesRequest, getNotes }

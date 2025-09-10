@@ -2,3 +2,6 @@ node_modules/
 build/
 *.log
 .env*
+src/note/test_post_processor.ts
+src/note/example_response.json
+src/note/example_processed.json
