@@ -92,7 +92,7 @@ interface GetNotesRequest {
 }
 
 
-function postProcessNoteData(result: { data: any[] | null }): { data: any[] | null } {
+function postProcessNoteData(result: { data?: any[] | null }): { data?: any[] | null } {
     /**
      * This will extract the data from the result and try to remove all fields specified in every data object.
      * The data object in the result is replaced with the modified data object and the result is returned.
@@ -112,8 +112,8 @@ function postProcessNoteData(result: { data: any[] | null }): { data: any[] | nu
         ["createdBy", "id"] // This is not relevant as there is no tool to process a user id
     ];
 
-    if (result.data !== null) {
-        // For every bookmark object in the result
+    if (Array.isArray(result?.data)) {
+        // For every note object in the result
         for (let i = 0; i < result.data.length; i++) {
             const dataObject = result.data[i];
             if (dataObject) { // Check if dataObject is not null/undefined/empty
@@ -139,7 +139,7 @@ function postProcessNoteData(result: { data: any[] | null }): { data: any[] | nu
             }
         }
     } else {
-        // When no data is returned, we return the result as is
+        // When no or non-array data is returned, we return the result as is
         return result;
     }
 
