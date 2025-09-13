@@ -63,7 +63,7 @@ const getNotesTool: Tool = {
             "pageLimit": {
                 "type": "number",
                 "description": "Page limit",
-                "default": 200,
+                "default": 300,
                 "maximum": 2000
             },
             "pageCursor": {
