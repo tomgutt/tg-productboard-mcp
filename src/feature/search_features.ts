@@ -3,14 +3,16 @@ import productboardClient from "../productboard_client.js";
 
 const searchFeaturesTool: Tool = {
     "name": "search_features",
-    "description": "Searches through all features by name and optionally by description. Fetches all pages automatically. This tool should not be called multiple times in parallel.",
+    "description": "Searches through all features by name and optionally by description. Matches any of the provided terms (OR). Fetches all pages automatically. This tool should not be called multiple times in parallel.",
     "inputSchema": {
         "type": "object",
-        "required": ["searchQuery"],
+        "required": ["searchQueries"],
         "properties": {
-            "searchQuery": {
-                "type": "string",
-                "description": "The search term to look for in feature names and descriptions"
+            "searchQueries": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "minLength": 1 },
+                "description": "Array of search terms to look for in feature names and optionally descriptions"
             },
             "searchDescriptions": {
                 "type": "boolean",
@@ -22,12 +24,15 @@ const searchFeaturesTool: Tool = {
 }
 
 interface SearchFeaturesRequest {
-    searchQuery: string;
+    searchQueries: string[];
     searchDescriptions?: boolean;
 }
 
 const searchFeatures = async (request: SearchFeaturesRequest): Promise<any> => {
-    const { searchQuery, searchDescriptions = false } = request;
+    const { searchQueries, searchDescriptions = false } = request;
+    const searchTerms = searchQueries
+        .map(term => term.trim().toLowerCase())
+        .filter(term => term.length > 0);
     
     // Collect all features from all pages
     const allFeatures: any[] = [];
@@ -50,27 +55,27 @@ const searchFeatures = async (request: SearchFeaturesRequest): Promise<any> => {
     }
         
     // Search through collected features
-    const searchTerm = searchQuery.toLowerCase();    
     const matchingFeatures = allFeatures.filter(feature => {
-        // Search in name (always)
-        const nameMatch = feature.name?.toLowerCase().includes(searchTerm);
-        
-        // Search in description (if enabled)
-        let descriptionMatch = false;
+        const nameLower = feature.name ? String(feature.name).toLowerCase() : '';
+        let cleanDescriptionLower: string | undefined = undefined;
         if (searchDescriptions && feature.description) {
-            // Remove HTML tags from description for better searching
-            const cleanDescription = feature.description.replace(/<[^>]*>/g, '').toLowerCase();
-            descriptionMatch = cleanDescription.includes(searchTerm);
+            cleanDescriptionLower = String(feature.description).replace(/<[^>]*>/g, '').toLowerCase();
         }
         
-        return nameMatch || descriptionMatch;
+        const matchesAnyTerm = searchTerms.some(term => {
+            const nameMatch = nameLower.includes(term);
+            const descriptionMatch = cleanDescriptionLower ? cleanDescriptionLower.includes(term) : false;
+            return nameMatch || descriptionMatch;
+        });
+        
+        return matchesAnyTerm;
     });
         
     return {
         data: matchingFeatures,
         allFeaturesCount: allFeatures.length,
         featuresMatchedCount: matchingFeatures.length,
-        searchQuery: searchQuery,
+        searchQueries: searchQueries,
         searchedDescriptions: searchDescriptions
     };
 }
