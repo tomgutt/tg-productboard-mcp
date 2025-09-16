@@ -1,6 +1,6 @@
 {
   "name": "@tomgutt/productboard-mcp",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "Integrate the Productboard API into agentic workflows via MCP",
   "author": "Tom Guttermann",
   "contributors": [
