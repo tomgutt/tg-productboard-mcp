@@ -3,7 +3,7 @@ import productboardClient from "../productboard_client.js";
 
 const searchFeaturesTool: Tool = {
     "name": "search_features",
-    "description": "Searches through all features by name and optionally by description. Matches any of the provided terms (OR). Fetches all pages automatically. This tool should not be called multiple times in parallel.",
+    "description": "Searches through all features by name and optionally by description. Matches any of the provided terms (OR). Fetches all pages automatically. This tool should not be called multiple times in parallel and its parameters should be used sparingly.",
     "inputSchema": {
         "type": "object",
         "required": ["searchQueries"],
