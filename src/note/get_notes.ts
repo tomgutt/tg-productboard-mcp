@@ -99,7 +99,6 @@ function postProcessNoteData(result: { data?: any[] | null }): { data?: any[] | 
      */
     // Top-level fields to remove
     const fieldsToRemove = [
-        "company", // We only have one company so this is not relevant
         "followers", // The followers arent too interesting
         "user", // This is not relevant as there is no tool to process a user id
         "externalDisplayUrl" // This is not relevant as we are only interested in the internal note url
