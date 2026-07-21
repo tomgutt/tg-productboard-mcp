@@ -10,20 +10,20 @@
   "publisher": "tomgutt",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tomgutt/tg-productboard-mcp"
+    "url": "git+https://github.com/tomgutt/tg-productboard-mcp.git"
   },
   "type": "module",
   "publishConfig": {
     "access": "public"
   },
   "bin": {
-    "productboard-mcp": "./build/index.js"
+    "productboard-mcp": "build/index.js"
   },
   "files": [
     "build"
   ],
   "scripts": {
-    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "build": "rm -rf build && tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "inspector": "npx @modelcontextprotocol/inspector build/index.js",
