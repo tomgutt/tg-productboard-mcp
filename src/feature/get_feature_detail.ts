@@ -3,7 +3,7 @@ import productboardClient from "../productboard_client.js";
 
 const getFeatureDetailTool: Tool = {
     "name": "get_feature_detail",
-    "description": "Returns detailed information about a specific feature",
+    "description": "Returns detailed information about a specific feature via the unified /entities endpoint (API v2)",
     "inputSchema": {
         "type": "object",
         "properties": {
@@ -21,7 +21,7 @@ interface GetFeatureDetailRequest {
 }
 
 const getFeatureDetail = async (request: GetFeatureDetailRequest): Promise<any> => {
-    const endpoint = `/features/${request.featureId}`
+    const endpoint = `/entities/${request.featureId}`
     return productboardClient.get(endpoint)
 }
 

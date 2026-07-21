@@ -33,44 +33,30 @@ const searchFeatures = async (request: SearchFeaturesRequest): Promise<any> => {
     const searchTerms = searchQueries
         .map(term => term.trim().toLowerCase())
         .filter(term => term.length > 0);
-    
-    // Collect all features from all pages
-    const allFeatures: any[] = [];
-    let nextUrl: string | undefined = '/features?pageLimit=1000';
-    
-    // Fetch all pages
-    while (nextUrl) {
-        const response: any = await productboardClient.get(nextUrl);
-        
-        if (response.data && Array.isArray(response.data)) {
-            allFeatures.push(...response.data);
-        }
-        
-        // Continue to next page only if there's a next URL AND current page has 1000 items
-        if (response.links?.next && response.data.length === 1000) {
-            nextUrl = new URL(response.links.next).pathname + new URL(response.links.next).search;
-        } else {
-            nextUrl = undefined;
-        }
-    }
-        
+
+    // Collect all feature entities across all pages
+    const allFeatures: any[] = await productboardClient.getAllPages('/entities', { type: ['feature'] });
+
     // Search through collected features
     const matchingFeatures = allFeatures.filter(feature => {
-        const nameLower = feature.name ? String(feature.name).toLowerCase() : '';
+        const name = feature.fields?.name;
+        const description = feature.fields?.description;
+
+        const nameLower = name ? String(name).toLowerCase() : '';
         let cleanDescriptionLower: string | undefined = undefined;
-        if (searchDescriptions && feature.description) {
-            cleanDescriptionLower = String(feature.description).replace(/<[^>]*>/g, '').toLowerCase();
+        if (searchDescriptions && description) {
+            cleanDescriptionLower = String(description).replace(/<[^>]*>/g, '').toLowerCase();
         }
-        
+
         const matchesAnyTerm = searchTerms.some(term => {
             const nameMatch = nameLower.includes(term);
             const descriptionMatch = cleanDescriptionLower ? cleanDescriptionLower.includes(term) : false;
             return nameMatch || descriptionMatch;
         });
-        
+
         return matchesAnyTerm;
     });
-        
+
     return {
         data: matchingFeatures,
         allFeaturesCount: allFeatures.length,

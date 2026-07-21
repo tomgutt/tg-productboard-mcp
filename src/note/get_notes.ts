@@ -1,74 +1,60 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import productboardClient from "../productboard_client.js";
+import productboardClient, { QueryParams } from "../productboard_client.js";
 import { removeNestedFieldsIfPresent, removeFields, removeEmptyFields, sanitizeHTMLContent } from "../utils/post_processor.js";
 
 const getNotesTool: Tool = {
     "name": "get_notes",
-    "description": "Returns a list of all notes",
+    "description": "Returns a list of notes. Uses GET /notes for simple filtering, or POST /notes/search (full-text and relationship filtering) whenever 'term', 'featureId', or 'companyId' is provided. Pagination is cursor-only via 'pageCursor' (there is no page-size/limit control in API v2, so 'pageLimit' has been removed). Tag filtering ('anyTag'/'allTags' in the old API) has been permanently removed in API v2 with no replacement and is no longer accepted here.",
     "inputSchema": {
         "type": "object",
         "properties": {
             "last": {
                 "type": "string",
-                "description": "Return only notes created since given span of months (m), days (s), or hours (h). E.g. 6m | 10d | 24h | 1h. Cannot be combined with createdFrom, createdTo, dateFrom, or dateTo"
+                "description": "Return only notes created since a given span of months (m), days (d), or hours (h), e.g. 6m | 10d | 24h | 1h. There is no 'last' parameter in API v2, so this is resolved client-side into an absolute 'createdFrom' timestamp (Date.now() minus the parsed duration) before calling the API. Cannot be combined with 'createdFrom' or 'createdTo'."
             },
             "createdFrom": {
                 "type": "string",
-                "format": "date",
-                "description": "Return only notes created since given date. Cannot be combined with last"
+                "format": "date-time",
+                "description": "Return only notes created on or after this ISO-8601 date-time (inclusive), e.g. 2024-01-01T00:00:00Z. Cannot be combined with 'last'."
             },
             "createdTo": {
                 "type": "string",
-                "format": "date",
-                "description": "Return only notes created before or equal to the given date. Cannot be combined with last"
+                "format": "date-time",
+                "description": "Return only notes created on or before this ISO-8601 date-time (inclusive). Cannot be combined with 'last'."
             },
             "updatedFrom": {
                 "type": "string",
-                "format": "date",
-                "description": "Return only notes updated since given date"
+                "format": "date-time",
+                "description": "Return only notes updated on or after this ISO-8601 date-time (inclusive)."
             },
             "updatedTo": {
                 "type": "string",
-                "format": "date",
-                "description": "Return only notes updated before or equal to the given date"
+                "format": "date-time",
+                "description": "Return only notes updated on or before this ISO-8601 date-time (inclusive)."
             },
             "term": {
                 "type": "string",
-                "description": "Return only notes by fulltext search"
+                "description": "Full-text search query. Setting this (alone or together with featureId/companyId) routes the request through POST /notes/search instead of GET /notes."
             },
             "featureId": {
                 "type": "string",
-                "description": "Return only notes for specific feature ID or its descendants"
+                "description": "Return only notes linked to this feature (UUID). Implemented via the POST /notes/search 'filter.relationships.link[].id' filter, so setting this also routes the request through the search endpoint even without 'term'."
             },
             "companyId": {
                 "type": "string",
-                "description": "Return only notes for specific company ID"
+                "description": "Return only notes related to this company (UUID). Implemented via the POST /notes/search 'filter.relationships.customer[].id' filter (the 'customer' relationship covers both companies and users), so setting this also routes the request through the search endpoint even without 'term'."
             },
             "ownerEmail": {
                 "type": "string",
-                "description": "Return only notes owned by a specific owner email"
+                "description": "Return only notes owned by a specific owner email. Maps to 'owner[email]' on GET /notes, or 'filter.fields.owner.email' on POST /notes/search. Requires the members:pii:read OAuth scope on the API token, otherwise owner emails are redacted."
             },
             "source": {
                 "type": "string",
-                "description": "Return only notes from a specific source origin. This is the unique string identifying the external system from which the data came"
-            },
-            "anyTag": {
-                "type": "string",
-                "description": "Return only notes that have been assigned any of the tags in the array. Cannot be combined with allTags"
-            },
-            "allTags": {
-                "type": "string",
-                "description": "Return only notes that have been assigned all of the tags in the array. Cannot be combined with anyTag"
-            },
-            "pageLimit": {
-                "type": "number",
-                "description": "Page limit",
-                "default": 300,
-                "maximum": 2000
+                "description": "Return only notes from a specific external source system (e.g. 'intercom', 'zendesk'). Maps to 'metadata[source][system]' on GET /notes, or 'filter.metadata.source.system' on POST /notes/search."
             },
             "pageCursor": {
                 "type": "string",
-                "description": "Page cursor to get next page of results"
+                "description": "Cursor for the next page of results, taken from the previous response's links.next. API v2 pagination is cursor-only; there is no page-size/limit parameter."
             }
         }
     }
@@ -85,30 +71,23 @@ interface GetNotesRequest {
     companyId?: string;
     ownerEmail?: string;
     source?: string;
-    anyTag?: string;
-    allTags?: string;
-    pageLimit?: number;
     pageCursor?: string;
 }
-
 
 function postProcessNoteData(result: { data?: any[] | null }): { data?: any[] | null } {
     /**
      * This will extract the data from the result and try to remove all fields specified in every data object.
      * The data object in the result is replaced with the modified data object and the result is returned.
      */
-    // Top-level fields to remove
-    const fieldsToRemove = [
-        "followers", // The followers arent too interesting
-        "user", // This is not relevant as there is no tool to process a user id
-        "externalDisplayUrl" // This is not relevant as we are only interested in the internal note url
-    ];
+    // Top-level fields to remove. v1's removable fields (followers, user, externalDisplayUrl) no longer
+    // exist on v2 notes at all (v2 permanently dropped followers/comments/totalResults from note responses),
+    // so there is nothing equivalent left to strip wholesale here.
+    const fieldsToRemove: string[] = [];
 
     // Nested fields to remove. To remove status under user (or ["user"]["status"]) it is ["user", "status"]
     const nestedFieldsToRemove = [
-        ["source", "record_id"], // This is not relevant as there is no tool to process a record id
-        ["features", "type"], // This is not relevant as the feature type seems to always be "feature"
-        ["createdBy", "id"] // This is not relevant as there is no tool to process a user id
+        ["links", "self"], // API self-link on the note; the human-facing "html" link is more useful to agents
+        ["relationships", "target", "links"] // per-relationship-target API self-links add tokens with little value; id/type are enough
     ];
 
     if (Array.isArray(result?.data)) {
@@ -128,9 +107,20 @@ function postProcessNoteData(result: { data?: any[] | null }): { data?: any[] | 
                 // Remove empty fields (null values, empty arrays, objects with all null subfields)
                 processedObject = removeEmptyFields(processedObject);
 
-                // Sanitize token-heavy HTML/content fields
-                if (typeof processedObject.content === 'string') {
-                    processedObject.content = sanitizeHTMLContent(processedObject.content);
+                // Sanitize token-heavy HTML/content fields. opportunityNote content is structured/read-only
+                // and is left untouched; textNote content is a plain HTML string; conversationNote content
+                // is an array of message parts, each with its own HTML content string.
+                if (processedObject.type !== 'opportunityNote' && processedObject.fields) {
+                    const content = processedObject.fields.content;
+                    if (typeof content === 'string') {
+                        processedObject.fields.content = sanitizeHTMLContent(content);
+                    } else if (Array.isArray(content)) {
+                        processedObject.fields.content = content.map((part: any) =>
+                            part && typeof part.content === 'string'
+                                ? { ...part, content: sanitizeHTMLContent(part.content) }
+                                : part
+                        );
+                    }
                 }
 
                 // Update the result with the processed object
@@ -145,65 +135,107 @@ function postProcessNoteData(result: { data?: any[] | null }): { data?: any[] | 
     return result;
 }
 
+function parseLastDuration(last: string): Date {
+    /**
+     * API v2 has no 'last' relative-duration parameter, so we parse it ourselves into an
+     * absolute point in time (Date.now() minus the parsed duration) to use as 'createdFrom'.
+     */
+    const match = /^(\d+)\s*(m|d|h)$/i.exec(last.trim());
+    if (!match) {
+        throw new Error(
+            `Invalid 'last' value "${last}". Expected a number followed by 'm' (months), 'd' (days), or 'h' (hours), e.g. "6m", "10d", "24h".`
+        );
+    }
+
+    const amount = parseInt(match[1], 10);
+    const unit = match[2].toLowerCase();
+    const since = new Date();
+
+    if (unit === 'm') {
+        since.setMonth(since.getMonth() - amount);
+    } else if (unit === 'd') {
+        since.setDate(since.getDate() - amount);
+    } else {
+        since.setHours(since.getHours() - amount);
+    }
+
+    return since;
+}
 
 const getNotes = async (request: GetNotesRequest): Promise<any> => {
     // Validate mutually exclusive parameters
     if (request.last && (request.createdFrom || request.createdTo)) {
         throw new Error("'last' parameter cannot be combined with 'createdFrom' or 'createdTo'");
     }
-    if (request.anyTag && request.allTags) {
-        throw new Error("'anyTag' cannot be combined with 'allTags'");
-    }
 
-    const params = new URLSearchParams()
-    
-    if (request.last) {
-        params.append('last', request.last)
-    }
-    if (request.createdFrom) {
-        params.append('createdFrom', request.createdFrom)
-    }
-    if (request.createdTo) {
-        params.append('createdTo', request.createdTo)
-    }
-    if (request.updatedFrom) {
-        params.append('updatedFrom', request.updatedFrom)
-    }
-    if (request.updatedTo) {
-        params.append('updatedTo', request.updatedTo)
-    }
-    if (request.term) {
-        params.append('term', request.term)
-    }
-    if (request.featureId) {
-        params.append('featureId', request.featureId)
-    }
-    if (request.companyId) {
-        params.append('companyId', request.companyId)
-    }
-    if (request.ownerEmail) {
-        params.append('ownerEmail', request.ownerEmail)
-    }
-    if (request.source) {
-        params.append('source', request.source)
-    }
-    if (request.anyTag) {
-        params.append('anyTag', request.anyTag)
-    }
-    if (request.allTags) {
-        params.append('allTags', request.allTags)
-    }
-    if (request.pageLimit) {
-        params.append('pageLimit', request.pageLimit.toString())
-    }
-    if (request.pageCursor) {
-        params.append('pageCursor', request.pageCursor)
-    }
+    // Resolve 'last' into an absolute 'createdFrom' timestamp, since v2 has no relative-duration filter
+    const resolvedCreatedFrom = request.last
+        ? parseLastDuration(request.last).toISOString()
+        : request.createdFrom;
 
-    const queryString = params.toString()
-    const endpoint = `/notes${queryString ? `?${queryString}` : ''}`
+    const usesSearch = Boolean(request.term || request.featureId || request.companyId);
 
-    const result = await productboardClient.get(endpoint)
+    let result: any;
+
+    if (usesSearch) {
+        // term/featureId/companyId require relationship- and/or full-text filtering, which only
+        // POST /notes/search supports (per https://developer.productboard.com/reference/performnotessearch)
+        const searchData: Record<string, any> = {};
+
+        if (request.term) {
+            searchData.search = { query: request.term };
+        }
+
+        const filter: Record<string, any> = {};
+
+        if (resolvedCreatedFrom || request.createdTo) {
+            filter.createdAt = {
+                ...(resolvedCreatedFrom ? { from: resolvedCreatedFrom } : {}),
+                ...(request.createdTo ? { to: request.createdTo } : {})
+            };
+        }
+        if (request.updatedFrom || request.updatedTo) {
+            filter.updatedAt = {
+                ...(request.updatedFrom ? { from: request.updatedFrom } : {}),
+                ...(request.updatedTo ? { to: request.updatedTo } : {})
+            };
+        }
+        if (request.ownerEmail) {
+            filter.fields = { owner: { email: request.ownerEmail } };
+        }
+        if (request.source) {
+            filter.metadata = { source: { system: request.source } };
+        }
+
+        const relationships: Record<string, any> = {};
+        if (request.featureId) {
+            relationships.link = { id: request.featureId };
+        }
+        if (request.companyId) {
+            relationships.customer = { id: request.companyId };
+        }
+        if (Object.keys(relationships).length > 0) {
+            filter.relationships = relationships;
+        }
+
+        if (Object.keys(filter).length > 0) {
+            searchData.filter = filter;
+        }
+
+        const endpoint = `/notes/search${request.pageCursor ? `?pageCursor=${encodeURIComponent(request.pageCursor)}` : ''}`;
+        result = await productboardClient.post(endpoint, { data: searchData });
+    } else {
+        const params: QueryParams = {
+            "owner[email]": request.ownerEmail,
+            "metadata[source][system]": request.source,
+            createdFrom: resolvedCreatedFrom,
+            createdTo: request.createdTo,
+            updatedFrom: request.updatedFrom,
+            updatedTo: request.updatedTo,
+            pageCursor: request.pageCursor
+        };
+        result = await productboardClient.get('/notes', params);
+    }
 
     try {
         return postProcessNoteData(result)

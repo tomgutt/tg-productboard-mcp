@@ -3,29 +3,27 @@ import productboardClient from "../productboard_client.js";
 
 const getComponentsTool: Tool = {
     "name": "get_components",
-    "description": "Returns a list of all components. This API is paginated and the page limit is always 100",
+    "description": "Returns a list of all components via the unified /entities endpoint (API v2). Pagination is cursor-based: to fetch the next page, take the `pageCursor` query value from the `links.next` URL of the previous response and pass it as the `pageCursor` input.",
     "inputSchema": {
         "type": "object",
         "properties": {
-            "page": {
-                "type": "number",
-                "default": 1
+            "pageCursor": {
+                "type": "string",
+                "description": "Cursor for the next page of results, taken from the `pageCursor` query value of the previous response's `links.next` URL. Omit for the first page."
             }
         }
     }
 }
 
 interface GetComponentsRequest {
-    page?: number
+    pageCursor?: string
 }
 
 const getComponents = async (request: GetComponentsRequest): Promise<any> => {
-    let endpoint = "/components"
-    if (request.page && request.page > 1) {
-        endpoint += `?pageOffset=${(request.page - 1) * 100}`
-    }
-
-    return productboardClient.get(endpoint)
+    return productboardClient.get("/entities", {
+        type: ["component"],
+        pageCursor: request.pageCursor,
+    })
 }
 
 export { getComponentsTool, GetComponentsRequest, getComponents }

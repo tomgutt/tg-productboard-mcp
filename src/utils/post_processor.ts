@@ -35,6 +35,13 @@ export function removeNestedFieldsIfPresent(
             return obj;
         }
 
+        // Arrays of objects (e.g. a note's `relationships` list) are traversed element-wise,
+        // applying the same remaining path to each item rather than treating the array itself
+        // as the object that owns the next path segment.
+        if (Array.isArray(obj)) {
+            return obj.map((item) => removeFieldPath(item, path));
+        }
+
         if (path.length === 1) {
             // Remove the field if it exists
             if (path[0] in obj) {

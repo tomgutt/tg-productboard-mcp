@@ -3,7 +3,7 @@ import productboardClient from "../productboard_client.js";
 
 const getComponentDetailTool: Tool = {
     "name": "get_component_detail",
-    "description": "Returns detailed information about a specific component",
+    "description": "Returns detailed information about a specific component via the unified /entities endpoint (API v2)",
     "inputSchema": {
         "type": "object",
         "properties": {
@@ -21,7 +21,7 @@ interface GetComponentDetailRequest {
 }
 
 const getComponentDetail = async (request: GetComponentDetailRequest): Promise<any> => {
-    const endpoint = `/components/${request.componentId}`
+    const endpoint = `/entities/${request.componentId}`
     return productboardClient.get(endpoint)
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@tomgutt/productboard-mcp",
-  "version": "1.1.11",
+  "version": "2.0.0",
   "description": "Integrate the Productboard API into agentic workflows via MCP",
   "author": "Tom Guttermann",
   "contributors": [
@@ -13,8 +13,11 @@
     "url": "https://github.com/tomgutt/tg-productboard-mcp"
   },
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
-    "notion": "./build/index.js"
+    "productboard-mcp": "./build/index.js"
   },
   "files": [
     "build"

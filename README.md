@@ -51,6 +51,18 @@ To use this with Claude Desktop, add the following to your `claude_desktop_confi
 - Implements additional search_features tool
 - Implements post-processing for response data to reduce token usage
 
+## Migration to Productboard API v2
+
+Productboard retired API v1, so this server now talks to `https://api.productboard.com/v2` instead of the old v1 base URL, and no longer sends the `X-Version` header. See Productboard's own [migration guide](https://developer.productboard.com/reference/migration-guide) for the full picture of what changed upstream.
+
+The most relevant changes for consumers of this MCP server:
+
+- **Cursor-only pagination.** List tools (`get_products`, `get_components`, `get_features`, `get_companies`, `get_notes`) no longer accept a numeric `page` parameter. Instead they take an optional `pageCursor` string — pass the cursor from the previous response's `links.next` URL to fetch the next page. `get_feature_statuses` is no longer paginated at all; it's now a single configuration call.
+- **`get_notes` filter changes:**
+  - `anyTag` / `allTags` have been removed — Productboard's v2 API no longer supports tag-based note filtering. This is a permanent gap called out in their migration guide, not an oversight here.
+  - `last` (e.g. `6m`, `10d`, `24h`) is still accepted, but is now translated into an absolute `createdFrom` timestamp client-side before calling the API, since v2 has no relative-duration filter.
+- **`get_features` filter changes:** the `noteId` filter has been removed, since the v2 unified entities list endpoint has no way to filter by related note.
+
 ## License
 
 This MCP server is licensed under the MIT License. This means you are free to use, modify, and distribute the software, subject to the terms and conditions of the MIT License. For more details, please see the LICENSE file in the project repository.
