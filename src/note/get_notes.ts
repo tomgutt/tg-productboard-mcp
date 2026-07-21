@@ -85,9 +85,11 @@ function postProcessNoteData(result: { data?: any[] | null }): { data?: any[] | 
     const fieldsToRemove: string[] = [];
 
     // Nested fields to remove. To remove status under user (or ["user"]["status"]) it is ["user", "status"]
+    // Note: a note's `relationships` is a paginated wrapper (`{ data: [...], links }`), not a bare array
+    // (confirmed against the live v2 API) - the path below accounts for that extra "data" level.
     const nestedFieldsToRemove = [
         ["links", "self"], // API self-link on the note; the human-facing "html" link is more useful to agents
-        ["relationships", "target", "links"] // per-relationship-target API self-links add tokens with little value; id/type are enough
+        ["relationships", "data", "target", "links"] // per-relationship-target API self-links add tokens with little value; id/type are enough
     ];
 
     if (Array.isArray(result?.data)) {
